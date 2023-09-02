@@ -1,4 +1,4 @@
-# Tensorized Deep Physics Informed Neural Networks :atom::computer:
+# Tensorized Deep Physics Informed Neural Networks :atom:
 
 This repository contains an implementation of Tensorized Physics Informed Neural Networks (TPINNs) for solving physics-based problems. TPINNs combine the power of neural networks with the physical laws governing the system to improve accuracy and generalization. :rocket:
 
@@ -14,11 +14,11 @@ To run the code in this repository, you need the following dependencies:
 ## :floppy_disk: Installation
 1. Clone the repository:
    ```
-   git clone https://github.com/your_username/tensorized-physics-informed-nn.git
+   git clone git@github.com:mvanzulli/TPINN.git
    ```
 2. Navigate to the project directory:
    ```
-   cd tensorized-physics-informed-nn
+   cd TPINN
    ```
 3. Install the required dependencies:
    ```
