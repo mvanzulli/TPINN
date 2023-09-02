@@ -125,26 +125,29 @@ class TNModel(tf.keras.Model):
     Attributes:
         num_layers (int): Number of TN layers.
         MPO_units (int): Number of units in the MPO tensor.
-        output_dim (int): Dimension of the output.
+        output_dim (int): Dimension of the output (default select same parameters as a dense).
         activation (str): Activation function to use (default is "tanh").
         use_bias (bool): Whether to use bias in the layers (default is True).
         kernel_initializer (str): Initializer for the kernel weights (default is "glorot_uniform").
         bias_initializer (str): Initializer for the bias weights (default is "zeros").
+        dif_equation (callable): One dimensional fourth order PDE.
 
     Methods:
         call(x: tf.Tensor) -> tf.Tensor: Forward pass of the model.
+        pde_loss(x: tf.Tensor) -> tf.Tensor: Computes the one dim PDE loss function.
     """
 
     def __init__(
         self,
         num_layers: int,
         MPO_units: int,
-        output_dim: int,
+        output_dim: int = 1,
         bond_dim: int = None,
         activation: str = "tanh",
         use_bias: bool = True,
         kernel_initializer: str = "glorot_uniform",
         bias_initializer: str = "zeros",
+        dif_equation: callable = None,
     ) -> None:
         """
         Initialize TNModel with the given parameters.
@@ -167,6 +170,7 @@ class TNModel(tf.keras.Model):
         self.use_bias = use_bias
         self.kernel_initializer = kernel_initializer
         self.bias_initializer = bias_initializer
+        self.dif_equation = dif_equation
 
         self.d = int(tf.math.sqrt(float(MPO_units)))
 
@@ -212,5 +216,20 @@ class TNModel(tf.keras.Model):
         a = self.dense_input(x)
         for tn_layer in self.tn_layers:
             a = tn_layer(a)
-        y = self.dense_output(a)
-        return y
+        y_pred = self.dense_output(a)
+
+        return y_pred
+
+    def compute_pde_loss(self, x: tf.Tensor) -> tf.Tensor:
+        if self.dif_equation is None:
+            raise ValueError("dif_equation must be a callable")
+        x = tf.convert_to_tensor(x)
+        x = tf.reshape(x, (-1, 1))
+        with tf.GradientTape() as tape:
+            tape.watch(x)
+            y = self.call(x)
+            dy_dx = tape.gradient(y, x)
+
+        residual_points = self.dif_equation(x, y, dy_dx)
+        pde_loss = tf.reduce_mean(tf.square(residual_points))
+        return pde_loss
